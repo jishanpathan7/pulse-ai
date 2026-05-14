@@ -1,0 +1,22 @@
+{
+  "name": "@pulse/utils",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared pure utilities — no framework deps, no side effects",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@pulse/eslint-config": "workspace:*",
+    "@pulse/tsconfig": "workspace:*",
+    "typescript": "^5.7.3",
+    "vitest": "^2.0.0"
+  }
+}

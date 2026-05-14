@@ -1,0 +1,24 @@
+{
+  "name": "@pulse/types",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared TypeScript contracts for Pulse AI — transport, telemetry, API shapes",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./transport": "./src/transport.ts",
+    "./telemetry": "./src/telemetry.ts",
+    "./render": "./src/render.ts",
+    "./api": "./src/api.ts",
+    "./errors": "./src/errors.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@pulse/eslint-config": "workspace:*",
+    "@pulse/tsconfig": "workspace:*",
+    "typescript": "^5.7.3"
+  }
+}

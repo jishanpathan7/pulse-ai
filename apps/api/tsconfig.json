@@ -1,0 +1,12 @@
+{
+  "extends": "@pulse/tsconfig/node",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+"include": ["src"]
+}

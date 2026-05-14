@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "composite": false,
+    "skipLibCheck": true
+  },
+  "files": [],
+  "references": [
+    { "path": "packages/types" },
+    { "path": "packages/utils" },
+    { "path": "packages/logger" },
+    { "path": "packages/telemetry" },
+    { "path": "packages/transport" },
+    { "path": "packages/ui" },
+    { "path": "apps/web" },
+    { "path": "apps/api" }
+  ]
+}

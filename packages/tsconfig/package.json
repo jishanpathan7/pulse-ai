@@ -1,0 +1,12 @@
+{
+  "name": "@pulse/tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared TypeScript configs for Pulse AI monorepo",
+  "exports": {
+    "./base": "./base.json",
+    "./node": "./node.json",
+    "./react": "./react.json"
+  },
+  "files": ["base.json", "node.json", "react.json"]
+}

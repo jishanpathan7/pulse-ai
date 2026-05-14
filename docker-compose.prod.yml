@@ -1,0 +1,75 @@
+# ─── Production compose ────────────────────────────────────────────────────────
+# Runs full stack: postgres, redis, api, web (nginx).
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Required env vars (set in .env or shell):
+#   JWT_SECRET, CORS_ORIGIN, ANTHROPIC_API_KEY (optional)
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     pulse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pulse}
+      POSTGRES_DB:       pulse_prod
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pulse -d pulse_prod']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV:          production
+      DATABASE_URL:      postgresql://pulse:${POSTGRES_PASSWORD:-pulse}@postgres:5432/pulse_prod
+      REDIS_URL:         redis://redis:6379
+      JWT_SECRET:        ${JWT_SECRET}
+      CORS_ORIGIN:       ${CORS_ORIGIN}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ENCRYPTION_KEY:    ${ENCRYPTION_KEY}
+      LOG_LEVEL:         info
+      API_PORT:          3003
+      API_HOST:          0.0.0.0
+    ports:
+      - '3003:3003'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -249,6 +249,26 @@ function useAIController(conversationId: ConversationId) {
 
       const byokDelegate = _byokKeyId ? resolveByokDelegate() : null;
 
+      // No BYOK key → prompt user to connect one. Never fall back to Demo in production.
+      if (!_byokKeyId) {
+        const errNow = Date.now();
+        const errMsg = createMessageSnapshot({
+          role: 'assistant',
+          content: '🔑 Connect an API key to start chatting.\n\nClick **API Keys** in the top navigation (or the button below) to connect Anthropic, OpenAI, Gemini, or any supported provider.',
+          tokenCount: 0,
+          errorCode: null,
+          completedAt: errNow,
+          createdAt: errNow,
+          streamId: null,
+          conversationId,
+        });
+        addMessage(conversationId, errMsg);
+        window.dispatchEvent(new CustomEvent('pulse:abort-stream', { bubbles: true }));
+        // Auto-open settings panel so user can connect immediately
+        useUIStore.getState().openPanel('settings');
+        return;
+      }
+
       const provider = (_byokKeyId && byokDelegate)
         ? new BYOKAdapter({
             keyId: _byokKeyId,
@@ -262,10 +282,10 @@ function useAIController(conversationId: ConversationId) {
             ? aiProviderRegistry.get('ws-anthropic')
             : anthropicAdapter.isAvailable
               ? aiProviderRegistry.get('anthropic')
-              : aiProviderRegistry.get('demo');
+              : null; // No provider — should not reach here (guarded above)
 
       // Guard: if BYOK key is active but no real backend is reachable, show error instead of Demo fallback
-      if (_byokKeyId && !byokDelegate) {
+      if (!provider || (_byokKeyId && !byokDelegate)) {
         const errNow = Date.now();
         const errMsg = createMessageSnapshot({
           role: 'assistant',

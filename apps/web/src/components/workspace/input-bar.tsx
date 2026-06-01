@@ -171,8 +171,12 @@ export function InputBar() {
         <div className="composer-input">
           {value.length === 0 && !focused && (
             <span className="placeholder" style={{ position: 'absolute', pointerEvents: 'none' }}>
-              {blocked ? 'Waiting for response…' : 'Ask anything… '}
-              {!blocked && <span style={{ color: 'var(--text-4)' }}>/ for commands</span>}
+              {blocked
+                ? 'Waiting for response…'
+                : activeKey
+                  ? <span>Ask anything… <span style={{ color: 'var(--text-4)' }}>/ for commands</span></span>
+                  : <span style={{ color: 'var(--text-4)' }}>Connect an API key to start chatting →</span>
+              }
             </span>
           )}
           <textarea

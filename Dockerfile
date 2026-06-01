@@ -1,5 +1,5 @@
 FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@latest --activate && npm install -g tsx
 WORKDIR /app
 
 # Install deps — NODE_ENV=development so pnpm includes tsx (production dep now)
@@ -22,4 +22,4 @@ COPY apps/api/ apps/api/
 ENV NODE_ENV=production
 EXPOSE 3003
 
-CMD ["node_modules/.bin/tsx", "apps/api/src/main.ts"]
+CMD ["tsx", "apps/api/src/main.ts"]

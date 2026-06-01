@@ -5,7 +5,7 @@
  * Success/failure determined by HTTP status and JSON response body.
  */
 
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 export interface AuthUser {
   id: string;

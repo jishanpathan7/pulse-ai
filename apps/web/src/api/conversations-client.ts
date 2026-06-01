@@ -2,7 +2,7 @@
  * conversations-client — REST calls for conversation + message persistence.
  */
 
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 export interface ConversationSummary {
   id: string;

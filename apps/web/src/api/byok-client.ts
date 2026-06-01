@@ -7,7 +7,7 @@
  *   - Never returns encrypted_key or rawKey fields
  */
 
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 export interface ConnectedKey {
   id: string;

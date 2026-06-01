@@ -1,0 +1,29 @@
+app = "pulse-ai-api"
+primary_region = "ord"  # Chicago — change to nearest: lhr (London), sin (Singapore), syd (Sydney)
+
+[build]
+  dockerfile = "apps/api/Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  API_PORT = "3003"
+  API_HOST = "0.0.0.0"
+  LOG_LEVEL = "info"
+
+[http_service]
+  internal_port = 3003
+  force_https = true
+  auto_stop_machines = false   # keep alive — don't spin down (breaks WS)
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"   # free tier: 256MB RAM
+  memory = "256mb"

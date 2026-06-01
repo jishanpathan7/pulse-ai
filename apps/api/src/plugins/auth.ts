@@ -40,14 +40,16 @@ export function setAuthCookies(
   reply: import('fastify').FastifyReply,
   tokens: { accessToken: string; refreshToken: string },
 ): void {
-  const base = { httpOnly: true, sameSite: 'strict' as const, secure: IS_PROD, path: '/' };
+  // Cross-origin (Vercel frontend → Railway backend) requires sameSite:'none' + secure:true
+  const base = { httpOnly: true, sameSite: (IS_PROD ? 'none' : 'strict') as 'none' | 'strict', secure: IS_PROD, path: '/' };
   reply.setCookie(ACCESS_COOKIE, tokens.accessToken, { ...base, maxAge: 15 * 60 });
   reply.setCookie(REFRESH_COOKIE, tokens.refreshToken, { ...base, maxAge: 7 * 24 * 60 * 60 });
 }
 
 /** Clear both cookies on logout. */
 export function clearAuthCookies(reply: import('fastify').FastifyReply): void {
-  const base = { httpOnly: true, sameSite: 'strict' as const, secure: IS_PROD, path: '/' };
+  // Cross-origin (Vercel frontend → Railway backend) requires sameSite:'none' + secure:true
+  const base = { httpOnly: true, sameSite: (IS_PROD ? 'none' : 'strict') as 'none' | 'strict', secure: IS_PROD, path: '/' };
   reply.setCookie(ACCESS_COOKIE, '', { ...base, maxAge: 0 });
   reply.setCookie(REFRESH_COOKIE, '', { ...base, maxAge: 0 });
 }

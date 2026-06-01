@@ -43,7 +43,7 @@ export class AnthropicAdapter implements AIProvider {
   private _available: boolean = false;
 
   constructor(config: AnthropicAdapterConfig = {}) {
-    this._baseUrl = config.baseUrl ?? '/api';
+    this._baseUrl = config.baseUrl ?? (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
     this._model = config.defaultModel ?? 'claude-sonnet-4-6';
     this._maxTokens = config.defaultMaxTokens ?? 2048;
   }

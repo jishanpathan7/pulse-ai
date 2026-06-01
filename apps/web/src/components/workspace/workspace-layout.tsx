@@ -84,6 +84,8 @@ void ollamaAdapter.probe().then((ok) => {
 // Falls back to AnthropicAdapter (SSE) → DemoAdapter if WS is unavailable.
 
 const WS_URL = (() => {
+  const envWs = import.meta.env.VITE_WS_URL as string | undefined;
+  if (envWs) return envWs;
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${proto}//${window.location.host}/ws`;
 })();

@@ -82,6 +82,7 @@ export class AnthropicAdapter implements AIProvider {
       response = await fetch(`${this._baseUrl}/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           messages,
           model: options?.model ?? this._model,

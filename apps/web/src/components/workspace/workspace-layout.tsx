@@ -69,15 +69,15 @@ aiProviderRegistry.register('demo', demoAdapter);
 aiProviderRegistry.register('anthropic', anthropicAdapter);
 aiProviderRegistry.register('ollama', ollamaAdapter);
 
-// Probe Ollama in background — takes effect before user sends first message
-void ollamaAdapter.probe().then((ok) => {
-  if (ok) {
-    console.info('[Pulse] Ollama available — llama3.2 active');
-    useWorkspaceStore.getState().setActiveProvider('ollama');
-  } else {
-    console.warn('[Pulse] Ollama not reachable — falling back to demo');
-  }
-});
+// Probe Ollama only in dev — in prod it's always localhost:11434 which CORS-blocks
+if (import.meta.env.DEV) {
+  void ollamaAdapter.probe().then((ok) => {
+    if (ok) {
+      console.info('[Pulse] Ollama available — llama3.2 active');
+      useWorkspaceStore.getState().setActiveProvider('ollama');
+    }
+  });
+}
 
 // ─── WebSocket transport ──────────────────────────────────────────────────────
 // Connect to the backend WS and register WsAIProvider as the preferred provider.

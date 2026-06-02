@@ -63,11 +63,17 @@ export async function streamRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
+    // Must set CORS headers manually — reply.raw bypasses Fastify's onSend hook
+    const origin = req.headers.origin;
     reply.raw.writeHead(200, {
-      'Content-Type':      'text/event-stream',
-      'Cache-Control':     'no-cache',
-      'Connection':        'keep-alive',
-      'X-Accel-Buffering': 'no',
+      'Content-Type':                'text/event-stream',
+      'Cache-Control':               'no-cache',
+      'Connection':                  'keep-alive',
+      'X-Accel-Buffering':           'no',
+      ...(origin ? {
+        'Access-Control-Allow-Origin':      origin,
+        'Access-Control-Allow-Credentials': 'true',
+      } : {}),
     });
 
     const send = (data: object): void => {

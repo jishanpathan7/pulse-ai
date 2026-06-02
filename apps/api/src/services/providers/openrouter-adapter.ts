@@ -14,7 +14,7 @@ async function orFetch(path: string, rawKey: string, options?: RequestInit): Pro
     headers: {
       Authorization: `Bearer ${rawKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://pulse-ai.app',
+      'HTTP-Referer': 'https://pulse-ai-olive.vercel.app',
       'X-Title': 'Pulse AI',
       ...options?.headers,
     },
@@ -46,26 +46,38 @@ export class OpenRouterAdapter implements ProviderAdapter {
         name?: string;
         context_length?: number;
         top_provider?: { max_completion_tokens?: number };
+        pricing?: { prompt?: string; completion?: string };
       }>;
     };
 
-    return data.data
-      .filter((m) => m.id && !m.id.includes(':free')) // exclude free-tier variants (tend to be rate-capped)
-      .slice(0, 50)
-      .map((m) => ({
+    const models = data.data.filter((m) => m.id);
+
+    // Sort: free models first, then paid
+    models.sort((a, b) => {
+      const aFree = a.id.includes(':free') || a.pricing?.prompt === '0';
+      const bFree = b.id.includes(':free') || b.pricing?.prompt === '0';
+      if (aFree && !bFree) return -1;
+      if (!aFree && bFree) return 1;
+      return 0;
+    });
+
+    return models.slice(0, 100).map((m) => {
+      const isFree = m.id.includes(':free') || m.pricing?.prompt === '0';
+      return {
         id: m.id,
-        name: m.name ?? m.id,
+        name: `${isFree ? '✦ ' : ''}${m.name ?? m.id}`,
         contextWindow: m.context_length ?? 32_000,
         maxOutput: m.top_provider?.max_completion_tokens ?? 4_096,
         supportsStreaming: true,
-      }));
+      };
+    });
   }
 
   async *stream(rawKey: string, request: ProviderStreamRequest): AsyncIterable<StreamEvent> {
     const { messages, model, maxTokens, systemPrompt, signal } = request;
 
     const body = {
-      model: model ?? 'openai/gpt-4o',
+      model: model ?? 'meta-llama/llama-3.1-8b-instruct:free',
       max_tokens: maxTokens ?? 4096,
       stream: true,
       messages: [

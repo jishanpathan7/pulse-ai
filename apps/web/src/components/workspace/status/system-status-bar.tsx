@@ -41,7 +41,7 @@ function ConnectionSegment() {
 function StreamSegment() {
   const streamCount = useStreamStore(selectStreamCount);
   const avgFrameMs = useTelemetryStore(selectAvgFrameTime);
-  const fps = avgFrameMs > 0 ? Math.round(1000 / avgFrameMs) : 0;
+  const fps = avgFrameMs > 0 ? Math.min(Math.round(1000 / avgFrameMs), 144) : 0;
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>

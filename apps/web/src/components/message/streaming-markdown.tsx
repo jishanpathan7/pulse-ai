@@ -35,6 +35,7 @@ type BlockNode =
   | { t: 'heading'; level: 1 | 2 | 3; text: string }
   | { t: 'code-block'; lang: string; lines: string[]; closed: boolean }
   | { t: 'list'; ordered: boolean; items: string[] }
+  | { t: 'table'; headers: string[]; rows: string[][] }
   | { t: 'hr' };
 
 // ─── Inline parser ────────────────────────────────────────────────────────────
@@ -84,6 +85,16 @@ function parseInline(text: string): InlineNode[] {
   }
 
   return nodes;
+}
+
+// ─── Table helpers ────────────────────────────────────────────────────────────
+
+function parseTableRow(line: string): string[] {
+  return line.split('|').slice(1, -1).map((cell) => cell.trim());
+}
+
+function isTableSeparator(line: string): boolean {
+  return /^\|[\s\-:|]+\|$/.test(line.trim());
 }
 
 // ─── Block parser ─────────────────────────────────────────────────────────────
@@ -174,15 +185,40 @@ export function parseStreamingMarkdown(content: string): ParseResult {
       continue;
     }
 
+    // Table: | header | header | followed by |---|---|
+    if (line.startsWith('|')) {
+      const sepLine = lines[i + 1] ?? '';
+      if (isTableSeparator(sepLine)) {
+        const headers = parseTableRow(line);
+        i += 2; // skip header row + separator row
+        const rows: string[][] = [];
+        while (i < lines.length && lines[i]!.startsWith('|')) {
+          rows.push(parseTableRow(lines[i]!));
+          i++;
+        }
+        blocks.push({ t: 'table', headers, rows });
+        continue;
+      }
+      // Lone | line — fall through to paragraph
+    }
+
     // Blank line — separates paragraphs (skip)
     if (line.trim() === '') {
       i++;
       continue;
     }
 
-    // Paragraph: accumulate non-blank lines
+    // Paragraph: accumulate non-blank lines (stop at block-level markers)
     const paraLines: string[] = [];
-    while (i < lines.length && lines[i]!.trim() !== '' && !lines[i]!.startsWith('#') && !lines[i]!.startsWith('```') && !/^[-*]\s+/.test(lines[i]!) && !/^\d+\.\s+/.test(lines[i]!)) {
+    while (
+      i < lines.length &&
+      lines[i]!.trim() !== '' &&
+      !lines[i]!.startsWith('#') &&
+      !lines[i]!.startsWith('```') &&
+      !lines[i]!.startsWith('|') &&
+      !/^[-*]\s+/.test(lines[i]!) &&
+      !/^\d+\.\s+/.test(lines[i]!)
+    ) {
       paraLines.push(lines[i]!);
       i++;
     }
@@ -266,6 +302,30 @@ function RenderBlock({ block }: { block: BlockNode }) {
             <li key={i}><RenderInline text={item} /></li>
           ))}
         </ul>
+      );
+
+    case 'table':
+      return (
+        <div style={TABLE_WRAPPER_STYLE}>
+          <table style={TABLE_STYLE}>
+            <thead>
+              <tr>
+                {block.headers.map((h, ci) => (
+                  <th key={ci} style={TH_STYLE}><RenderInline text={h} /></th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, ri) => (
+                <tr key={ri} style={ri % 2 === 1 ? TR_ALT_STYLE : TR_STYLE}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} style={TD_STYLE}><RenderInline text={cell} /></td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       );
 
     case 'hr':
@@ -402,4 +462,46 @@ const HR_STYLE: React.CSSProperties = {
   border: 'none',
   borderTop: '1px solid #21262d',
   margin: '1em 0',
+};
+
+const TABLE_WRAPPER_STYLE: React.CSSProperties = {
+  margin: '0.75em 0',
+  overflowX: 'auto',
+  borderRadius: '6px',
+  border: '1px solid #2a2826',
+};
+
+const TABLE_STYLE: React.CSSProperties = {
+  width: '100%',
+  borderCollapse: 'collapse',
+  fontFamily: '"JetBrains Mono", "Fira Mono", monospace',
+  fontSize: '0.8125rem',
+};
+
+const TH_STYLE: React.CSSProperties = {
+  padding: '8px 14px',
+  textAlign: 'left',
+  fontWeight: 600,
+  fontSize: '0.75rem',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: '#8b949e',
+  background: '#161b22',
+  borderBottom: '1px solid #2a2826',
+  whiteSpace: 'nowrap',
+};
+
+const TR_STYLE: React.CSSProperties = {
+  borderBottom: '1px solid #1e1c1a',
+};
+
+const TR_ALT_STYLE: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.02)',
+  borderBottom: '1px solid #1e1c1a',
+};
+
+const TD_STYLE: React.CSSProperties = {
+  padding: '7px 14px',
+  color: '#e6edf3',
+  verticalAlign: 'top',
 };

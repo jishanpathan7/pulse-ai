@@ -50,7 +50,7 @@ function CompletedMessageInner({ snapshot }: CompletedMessageProps) {
       {/* Header row */}
       <div className="msg-head">
         <div className={`msg-avatar ${isUser ? 'user' : 'ai'}`} aria-hidden>
-          {isUser ? 'You' : 'P'}
+          {isUser ? 'Y' : 'P'}
         </div>
         <span className="msg-author">{isUser ? 'You' : 'Pulse'}</span>
         <span>·</span>

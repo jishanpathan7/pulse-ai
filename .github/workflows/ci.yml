@@ -44,3 +44,9 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+        env:
+          # Stub values — tests don't hit DB or send JWTs
+          # key-encryption.ts imports env.ts which validates these at module load
+          DATABASE_URL: postgresql://pulse:pulse@localhost:5432/pulse_test
+          JWT_SECRET: test-secret-at-least-32-characters-long-for-ci
+          NODE_ENV: test

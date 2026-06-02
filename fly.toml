@@ -1,5 +1,5 @@
 app = "pulse-ai-api"
-primary_region = "ord"  # Chicago — change to nearest: lhr (London), sin (Singapore), syd (Sydney)
+primary_region = "ord"
 
 [build]
   dockerfile = "apps/api/Dockerfile"

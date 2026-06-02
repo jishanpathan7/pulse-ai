@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useStreamStore, selectStreamCount } from '../../store/stream-store.js';
-import { useWorkspaceStore, selectActiveProvider } from '../../workspace/workspace-store.js';
-import { useByokStore, selectActiveKeyId, selectActiveModelId, selectByokKeys } from '../../store/byok-store.js';
+import { useWorkspaceStore, selectActiveProvider, selectActiveSessionId } from '../../workspace/workspace-store.js';
+import { useByokStore, selectActiveKeyId, selectActiveModelId, selectByokKeys, selectModelsByKeyId } from '../../store/byok-store.js';
 import { useUIStore } from '../../store/ui-store.js';
+import { useConversationStore, selectMessages } from '../../store/conversation-store.js';
 
 export interface SendMessageEvent extends CustomEvent {
   detail: { content: string };
@@ -88,6 +89,17 @@ export function InputBar() {
   }, []);
 
   const blocked = isStreaming || submitting;
+
+  // Context window usage
+  const activeSessionId = useWorkspaceStore(selectActiveSessionId);
+  const modelsByKeyId = useByokStore(selectModelsByKeyId);
+  const messages = useConversationStore(selectMessages(activeSessionId as string));
+  const usedTokens = messages.reduce((sum, m) => sum + (m.tokenCount ?? 0), 0);
+  const activeModel = activeKeyId ? (modelsByKeyId[activeKeyId] ?? []).find((m) => m.id === activeModelId) : null;
+  const maxTokens = activeModel?.contextWindow ?? 128_000;
+  const ctxPct = Math.min(usedTokens / maxTokens, 1);
+  const ctxColor = ctxPct >= 0.95 ? 'var(--red)' : ctxPct >= 0.8 ? 'var(--yellow)' : 'var(--green-dim)';
+
   const slashCommands = value.startsWith('/') && focused ? filterCommands(value) : [];
   const showMenu = slashCommands.length > 0;
 
@@ -343,6 +355,18 @@ export function InputBar() {
           </div>
         </div>
       </div>
+      {/* Context window bar — only shown when tokens are used */}
+      {usedTokens > 0 && (
+        <div style={{ height: 2, background: 'var(--border)', marginTop: 4, borderRadius: 1 }}>
+          <div style={{
+            height: '100%',
+            width: `${ctxPct * 100}%`,
+            background: ctxColor,
+            borderRadius: 1,
+            transition: 'width 300ms, background 300ms',
+          }} />
+        </div>
+      )}
     </div>
   );
 }

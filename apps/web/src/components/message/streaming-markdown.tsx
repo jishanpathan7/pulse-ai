@@ -20,7 +20,7 @@
  *   These can be added in Phase 8 (full document rendering).
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 
 // ─── AST types ────────────────────────────────────────────────────────────────
 
@@ -251,6 +251,103 @@ function RenderInline({ text }: { text: string }) {
   );
 }
 
+// ─── Syntax highlighter ───────────────────────────────────────────────────────
+// Basic token colorizer — no external deps. Covers JS/TS/Python/SQL/Shell.
+
+const KEYWORDS = /\b(const|let|var|function|class|return|if|else|for|while|do|switch|case|break|continue|import|export|default|from|async|await|new|typeof|instanceof|void|null|undefined|true|false|in|of|try|catch|finally|throw|extends|super|this|type|interface|enum|readonly|public|private|protected|static|abstract|override|declare|namespace|module|require|def|lambda|yield|with|pass|raise|except|elif|and|or|not|is|None|True|False|SELECT|FROM|WHERE|JOIN|ON|GROUP|ORDER|BY|HAVING|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TABLE|INDEX|INTO|VALUES|SET|AS|INNER|LEFT|RIGHT|OUTER|LIMIT|OFFSET)\b/g;
+const STRINGS = /(["'`])(?:\\.|(?!\1)[^\\])*\1/g;
+const COMMENTS_LINE = /\/\/.*/g;
+const COMMENTS_BLOCK = /\/\*[\s\S]*?\*\//g;
+const NUMBERS = /\b\d+(\.\d+)?\b/g;
+
+function highlightCode(code: string): React.ReactNode[] {
+  type Seg = { start: number; end: number; type: 'kw' | 'str' | 'cmt' | 'num' };
+  const segs: Seg[] = [];
+  const mark = (re: RegExp, type: Seg['type']) => {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      // Don't overlap existing segments
+      if (!segs.some((s) => m!.index < s.end && m!.index + m![0].length > s.start)) {
+        segs.push({ start: m.index, end: m.index + m[0].length, type });
+      }
+    }
+  };
+  mark(new RegExp(COMMENTS_BLOCK.source, 'g'), 'cmt');
+  mark(new RegExp(COMMENTS_LINE.source, 'g'), 'cmt');
+  mark(new RegExp(STRINGS.source, 'g'), 'str');
+  mark(new RegExp(NUMBERS.source, 'g'), 'num');
+  mark(new RegExp(KEYWORDS.source, 'g'), 'kw');
+  segs.sort((a, b) => a.start - b.start);
+
+  const COLOR: Record<Seg['type'], string> = {
+    kw:  '#c792ea',
+    str: '#c3e88d',
+    cmt: '#546e7a',
+    num: '#f78c6c',
+  };
+
+  const nodes: React.ReactNode[] = [];
+  let pos = 0;
+  for (const seg of segs) {
+    if (seg.start > pos) nodes.push(<React.Fragment key={pos}>{code.slice(pos, seg.start)}</React.Fragment>);
+    nodes.push(<span key={seg.start} style={{ color: COLOR[seg.type] }}>{code.slice(seg.start, seg.end)}</span>);
+    pos = seg.end;
+  }
+  if (pos < code.length) nodes.push(<React.Fragment key={pos}>{code.slice(pos)}</React.Fragment>);
+  return nodes;
+}
+
+// ─── CodeBlock component ──────────────────────────────────────────────────────
+
+function CodeBlock({ lang, lines, closed }: { lang: string; lines: string[]; closed: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const code = lines.join('\n');
+
+  const handleCopy = () => {
+    void navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <div style={CODE_BLOCK_WRAPPER}>
+      <div style={CODE_LANG_LABEL}>
+        <span style={{ color: '#6ee7b7', fontSize: 10, letterSpacing: '0.06em' }}>
+          {lang || 'code'}
+        </span>
+        {!closed && (
+          <span style={{ color: '#38bdf8', fontSize: 9, marginLeft: 8 }}>streaming…</span>
+        )}
+        {closed && (
+          <button
+            onClick={handleCopy}
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              border: '1px solid #2a2826',
+              borderRadius: 3,
+              color: copied ? '#6ee7b7' : '#8b949e',
+              cursor: 'pointer',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: 10,
+              letterSpacing: '0.06em',
+              padding: '2px 8px',
+              transition: 'color 150ms, border-color 150ms',
+            }}
+          >
+            {copied ? '✓ copied' : 'copy'}
+          </button>
+        )}
+      </div>
+      <pre style={CODE_BLOCK_PRE}>
+        <code>{lang ? highlightCode(code) : code}</code>
+      </pre>
+    </div>
+  );
+}
+
 // ─── Block renderers ──────────────────────────────────────────────────────────
 
 function RenderBlock({ block }: { block: BlockNode }) {
@@ -273,21 +370,7 @@ function RenderBlock({ block }: { block: BlockNode }) {
       );
 
     case 'code-block':
-      return (
-        <div style={CODE_BLOCK_WRAPPER}>
-          {block.lang && (
-            <div style={CODE_LANG_LABEL}>
-              {block.lang}
-              {!block.closed && (
-                <span style={{ color: '#38bdf8', marginLeft: 8, fontSize: 9 }}>streaming…</span>
-              )}
-            </div>
-          )}
-          <pre style={CODE_BLOCK_PRE}>
-            <code>{block.lines.join('\n')}</code>
-          </pre>
-        </div>
-      );
+      return <CodeBlock lang={block.lang} lines={block.lines} closed={block.closed} />;
 
     case 'list':
       return block.ordered ? (

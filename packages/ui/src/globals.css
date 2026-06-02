@@ -171,19 +171,28 @@ p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
 
 /* ws status pill */
 .ws-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--font-mono); font-size: 10px;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--text-2);
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-mono); font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--green);
+  background: rgba(110,231,183,0.08);
+  border: 1px solid rgba(110,231,183,0.2);
+  padding: 3px 9px;
+  border-radius: 3px;
 }
+.ws-pill.warn { color: var(--yellow); background: rgba(255,234,38,0.08); border-color: rgba(255,234,38,0.2); }
+.ws-pill.err  { color: var(--red);    background: rgba(255,90,95,0.08);   border-color: rgba(255,90,95,0.2); }
 .ws-dot {
-  width: 6px; height: 6px;
+  width: 7px; height: 7px;
   background: var(--green);
+  border-radius: 50%;
   position: relative; flex: none;
 }
 .ws-dot::after {
   content: ''; position: absolute; inset: -3px;
-  border: 1px solid var(--green); opacity: 0.4;
+  border: 1px solid var(--green); opacity: 0.35;
+  border-radius: 50%;
   animation: ws-ping 2s infinite;
 }
 .ws-dot.warn { background: var(--yellow); }

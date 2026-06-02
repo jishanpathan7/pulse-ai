@@ -9,15 +9,15 @@ function WsStatusPill() {
   const state = useTransportStore(selectConnectionState);
   const agg = useTelemetryStore(selectAggregated);
 
-  const dotClass = state === 'connected' ? '' : state === 'reconnecting' ? 'warn' : state === 'failed' || state === 'disconnected' ? 'err' : '';
+  const stateClass = state === 'reconnecting' ? 'warn' : (state === 'failed' || state === 'disconnected') ? 'err' : '';
   const label = state === 'connected'
-    ? agg.wsRttP50Ms > 0 ? `${Math.round(agg.wsRttP50Ms)}ms` : 'live'
-    : state;
+    ? agg.wsRttP50Ms > 0 ? `● ${Math.round(agg.wsRttP50Ms)}ms` : '● live'
+    : state === 'reconnecting' ? '◌ reconnecting'
+    : '○ offline';
 
   return (
-    <div className="ws-pill">
-      <span className={`ws-dot ${dotClass}`} aria-hidden />
-      <span>{label}</span>
+    <div className={`ws-pill ${stateClass}`} title={`WebSocket: ${state}`}>
+      {label}
     </div>
   );
 }

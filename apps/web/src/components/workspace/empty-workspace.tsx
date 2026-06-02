@@ -82,18 +82,18 @@ export function EmptyWorkspace() {
       {/* ── Hero ── */}
       <div className="empty-hero">
         <div className="t-label" style={{ marginBottom: 22 }}>
-          <span style={{ color: 'var(--accent)' }}>● Pulse AI Workspace</span>
+          <span style={{ color: 'var(--accent)' }}>● Pulse AI</span>
           <span style={{ marginLeft: 14, color: 'var(--text-4)' }}>
-            Claude · 200k context · realtime streaming
+            Anthropic · OpenAI · Gemini · Grok · OpenRouter · realtime streaming
           </span>
         </div>
         <h1>
-          A workspace built for <span className="em">realtime</span> reasoning.
+          Chat with any AI. <span className="em">See every frame.</span>
         </h1>
         <p>
-          Stream tokens at 60fps, watch render commits in real time, replay
-          any sequence from offset zero. Your context, latency budget, and
-          render pipeline — all in the same frame.
+          Connect your own API key from any provider. Tokens stream at 60fps with
+          live telemetry — latency, render time, and frame budget visible in real time.
+          Dropped connections recover from exact offset. No token lost, ever.
         </p>
         <div style={{ display: 'flex', gap: 10, marginTop: 26, flexWrap: 'wrap' }}>
           <button style={BTN_PRIMARY} onClick={focusInput}>↵ Start a session</button>

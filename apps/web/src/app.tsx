@@ -75,8 +75,10 @@ export function App() {
     );
   }
 
-  // Unauthenticated — show auth screen
+  // Unauthenticated on root → show landing page
+  // Unauthenticated on /app → show auth screen
   if (authStatus === 'unauthenticated') {
+    if (!inWorkspace) return <LandingPage onEnterWorkspace={enterWorkspace} />;
     return <AuthScreen />;
   }
 

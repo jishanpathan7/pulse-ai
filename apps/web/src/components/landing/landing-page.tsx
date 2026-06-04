@@ -70,8 +70,20 @@ export function LandingPage({ onEnterWorkspace }: LandingPageProps) {
           fontFamily: 'var(--font-mono)', fontSize: 11,
           letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-3)',
         }}>
-          {['Providers', 'Features', 'How it works'].map((item) => (
-            <span key={item} style={{ cursor: 'pointer' }}>{item}</span>
+          {[
+            { label: 'Providers', id: 'providers' },
+            { label: 'Features', id: 'features' },
+            { label: 'How it works', id: 'how-it-works' },
+          ].map(({ label, id }) => (
+            <span
+              key={id}
+              style={{ cursor: 'pointer', transition: 'color 120ms' }}
+              onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-3)'; }}
+            >
+              {label}
+            </span>
           ))}
         </nav>
 
@@ -211,7 +223,7 @@ export function LandingPage({ onEnterWorkspace }: LandingPageProps) {
       </section>
 
       {/* ── Providers strip ── */}
-      <section style={{ borderBottom: '1px solid var(--border)', padding: '32px 64px' }}>
+      <section id="providers" style={{ borderBottom: '1px solid var(--border)', padding: '32px 64px' }}>
         <div className="t-label" style={{ marginBottom: 20 }}>
           Connect your key from any provider
         </div>
@@ -229,7 +241,7 @@ export function LandingPage({ onEnterWorkspace }: LandingPageProps) {
       </section>
 
       {/* ── Features ── */}
-      <section style={{ padding: '64px 64px', borderBottom: '1px solid var(--border)' }}>
+      <section id="features" style={{ padding: '64px 64px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ marginBottom: 44 }}>
           <div className="t-label" style={{ marginBottom: 14 }}>What you get</div>
           <h2 style={{
@@ -258,7 +270,7 @@ export function LandingPage({ onEnterWorkspace }: LandingPageProps) {
       </section>
 
       {/* ── How it works ── */}
-      <section style={{ padding: '64px 64px', borderBottom: '1px solid var(--border)' }}>
+      <section id="how-it-works" style={{ padding: '64px 64px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ marginBottom: 40 }}>
           <div className="t-label" style={{ marginBottom: 14 }}>How it works</div>
           <h2 style={{
@@ -341,9 +353,9 @@ export function LandingPage({ onEnterWorkspace }: LandingPageProps) {
           Pulse AI
         </div>
         <div style={{ justifySelf: 'center', display: 'flex', gap: 22 }}>
-          {['GitHub', 'Privacy', 'Contact'].map((item) => (
-            <span key={item} style={{ cursor: 'pointer' }}>{item}</span>
-          ))}
+          <a href="https://github.com/jishanpathan7/pulse-ai" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none', cursor: 'pointer' }}>GitHub</a>
+          <span style={{ cursor: 'pointer' }}>Privacy</span>
+          <a href="mailto:jishanpatel78@gmail.com" style={{ color: 'inherit', textDecoration: 'none', cursor: 'pointer' }}>Contact</a>
         </div>
         <div>Built with TypeScript · Fastify · React 19</div>
       </footer>

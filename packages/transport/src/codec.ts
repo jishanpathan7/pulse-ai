@@ -15,6 +15,11 @@ import type {
   ServerMessage,
   Envelope,
   ProtocolVersion,
+  SessionId,
+  SequenceNumber,
+  StreamId,
+  ConversationId,
+  SequencedServerMessage,
 } from '@pulse/types/transport';
 import type { PulseError } from '@pulse/types/errors';
 import { TransportErrorCode } from '@pulse/types/errors';
@@ -107,10 +112,10 @@ function parseHandshakeAck(msg: Record<string, unknown>): Result<ServerMessage, 
   }
   return ok({
     type: 'handshake_ack',
-    sessionId: msg['sessionId'] as import('@pulse/types/transport').SessionId,
+    sessionId: msg['sessionId'] as SessionId,
     serverTimestamp: msg['serverTimestamp'] as number,
     protocolVersion: msg['protocolVersion'] as ProtocolVersion,
-    resumedFromSeq: msg['resumedFromSeq'] as import('@pulse/types/transport').SequenceNumber,
+    resumedFromSeq: msg['resumedFromSeq'] as SequenceNumber,
   });
 }
 
@@ -136,10 +141,10 @@ function parseStreamStart(msg: Record<string, unknown>): Result<ServerMessage, P
   }
   return ok({
     type: 'stream_start',
-    seq: msg['seq'] as import('@pulse/types/transport').SequenceNumber,
+    seq: msg['seq'] as SequenceNumber,
     timestamp: msg['timestamp'] as number,
-    streamId: msg['streamId'] as import('@pulse/types/transport').StreamId,
-    conversationId: msg['conversationId'] as import('@pulse/types/transport').ConversationId,
+    streamId: msg['streamId'] as StreamId,
+    conversationId: msg['conversationId'] as ConversationId,
   });
 }
 
@@ -155,9 +160,9 @@ function parseToken(msg: Record<string, unknown>): Result<ServerMessage, PulseEr
   }
   return ok({
     type: 'token',
-    seq: msg['seq'] as import('@pulse/types/transport').SequenceNumber,
+    seq: msg['seq'] as SequenceNumber,
     timestamp: msg['timestamp'] as number,
-    streamId: msg['streamId'] as import('@pulse/types/transport').StreamId,
+    streamId: msg['streamId'] as StreamId,
     token: msg['token'] as string,
     tokenIndex: msg['tokenIndex'] as number,
   });
@@ -175,9 +180,9 @@ function parseStreamEnd(msg: Record<string, unknown>): Result<ServerMessage, Pul
   }
   return ok({
     type: 'stream_end',
-    seq: msg['seq'] as import('@pulse/types/transport').SequenceNumber,
+    seq: msg['seq'] as SequenceNumber,
     timestamp: msg['timestamp'] as number,
-    streamId: msg['streamId'] as import('@pulse/types/transport').StreamId,
+    streamId: msg['streamId'] as StreamId,
     totalTokens: msg['totalTokens'] as number,
     durationMs: msg['durationMs'] as number,
   });
@@ -196,9 +201,9 @@ function parseStreamError(msg: Record<string, unknown>): Result<ServerMessage, P
   }
   return ok({
     type: 'stream_error',
-    seq: msg['seq'] as import('@pulse/types/transport').SequenceNumber,
+    seq: msg['seq'] as SequenceNumber,
     timestamp: msg['timestamp'] as number,
-    streamId: msg['streamId'] as import('@pulse/types/transport').StreamId,
+    streamId: msg['streamId'] as StreamId,
     code: msg['code'] as string,
     message: msg['message'] as string,
     retryable: msg['retryable'] as boolean,
@@ -215,7 +220,7 @@ function parseReplayChunk(msg: Record<string, unknown>): Result<ServerMessage, P
     return err(parseError('Invalid replay_chunk: missing required fields'));
   }
 
-  const innerMessages: import('@pulse/types/transport').SequencedServerMessage[] = [];
+  const innerMessages: SequencedServerMessage[] = [];
   for (const raw of msg['messages'] as unknown[]) {
     if (!isObject(raw) || !hasStringField(raw, 'type')) {
       return err(parseError('replay_chunk contains invalid inner message'));
@@ -226,13 +231,13 @@ function parseReplayChunk(msg: Record<string, unknown>): Result<ServerMessage, P
     if (!('seq' in inner)) {
       return err(parseError('replay_chunk inner message is not sequenced'));
     }
-    innerMessages.push(inner as import('@pulse/types/transport').SequencedServerMessage);
+    innerMessages.push(inner);
   }
 
   return ok({
     type: 'replay_chunk',
-    requestFromSeq: msg['requestFromSeq'] as import('@pulse/types/transport').SequenceNumber,
-    requestToSeq: msg['requestToSeq'] as import('@pulse/types/transport').SequenceNumber,
+    requestFromSeq: msg['requestFromSeq'] as SequenceNumber,
+    requestToSeq: msg['requestToSeq'] as SequenceNumber,
     messages: innerMessages,
     isLast: msg['isLast'] as boolean,
   });

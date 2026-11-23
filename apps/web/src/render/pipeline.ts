@@ -174,9 +174,13 @@ export class RenderPipeline {
           const pending = this._scheduler.pendingTokenCount;
           const decision = this._batchStrategy.shouldFlush(pending, this._frameBudget);
           if (decision.shouldFlush) {
-            this._scheduler.enqueue(message.streamId, [message.token]);
+            // Drain the buffer (this token plus any deferred ones, in order).
+            // The buffer is the single owner of undelivered tokens — enqueueing
+            // without draining would deliver them again at stream_end.
+            this._scheduler.enqueue(message.streamId, this._bufferManager.drain(message.streamId));
           }
-          // If not flushing: token is in buffer, will be picked up next frame
+          // If not flushing: token stays buffered and is drained, in order,
+          // with the next flushed token or at stream_end/stream_error.
         }
         break;
       }
@@ -192,14 +196,7 @@ export class RenderPipeline {
           errorCode: null,
         });
 
-        // Signal that this stream needs one more flush
-        const remaining = this._bufferManager.drain(message.streamId);
-        if (remaining.length > 0) {
-          this._scheduler.enqueue(message.streamId, remaining);
-        } else {
-          // No buffered tokens — trigger flush so finalization check runs
-          this._scheduler.enqueue(message.streamId, []);
-        }
+        this._flushThenFinalize(message.streamId);
         break;
       }
 
@@ -213,12 +210,7 @@ export class RenderPipeline {
           errorCode: message.code,
         });
 
-        const remaining = this._bufferManager.drain(message.streamId);
-        if (remaining.length > 0) {
-          this._scheduler.enqueue(message.streamId, remaining);
-        } else {
-          this._scheduler.enqueue(message.streamId, []);
-        }
+        this._flushThenFinalize(message.streamId);
         break;
       }
 
@@ -265,6 +257,26 @@ export class RenderPipeline {
     for (const streamId of streamIds) {
       this._tryFinalize(streamId);
     }
+  }
+
+  /**
+   * Called after markForFinalization (stream_end / stream_error).
+   *
+   * Invariant: every token is committed before the stream is finalized.
+   *   - Tokens still buffered or queued → enqueue them; the next flush commits
+   *     them and _checkFinalizations finalizes (streamId is in that batch).
+   *   - Nothing pending for this stream → finalize now. The scheduler ignores
+   *     empty enqueues, so waiting for a flush would leave the stream
+   *     'streaming' forever (and block the input bar via streamCount).
+   */
+  private _flushThenFinalize(streamId: StreamId): void {
+    const remaining = this._bufferManager.drain(streamId);
+    if (remaining.length > 0) {
+      this._scheduler.enqueue(streamId, remaining);
+      return;
+    }
+    if (this._scheduler.hasPendingFor(streamId)) return;
+    this._tryFinalize(streamId);
   }
 
   private _tryFinalize(streamId: StreamId): void {

@@ -59,6 +59,11 @@ export class RAFScheduler {
     return this._queue.reduce((sum, e) => sum + e.tokens.length, 0);
   }
 
+  /** True if tokens for this stream are queued and will be delivered by the next flush. */
+  hasPendingFor(streamId: StreamId): boolean {
+    return this._queue.some((e) => e.streamId === streamId);
+  }
+
   /**
    * Enqueue tokens for a stream. Schedules a RAF if one is not already pending.
    * Safe to call many times per frame — only one RAF is ever scheduled.

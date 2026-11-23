@@ -21,6 +21,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
+      "env": ["NODE_ENV", "DATABASE_URL", "JWT_SECRET"],
       "outputs": ["coverage/**"]
     },
     "test:watch": {

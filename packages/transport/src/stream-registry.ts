@@ -46,7 +46,7 @@ export class StreamRegistry {
   }
 
   getStream(streamId: StreamId): StreamState | null {
-    return this._streams.get(streamId as string) ?? null;
+    return this._streams.get(streamId) ?? null;
   }
 
   onStreamChange(handler: StreamChangeHandler): () => void {
@@ -59,7 +59,7 @@ export class StreamRegistry {
   // ─── Mutation (transport-internal) ──────────────────────────────────────────
 
   onStreamStart(msg: ServerStreamStartMessage): void {
-    const existing = this._streams.get(msg.streamId as string);
+    const existing = this._streams.get(msg.streamId);
     if (existing !== undefined) {
       // Duplicate stream_start (e.g., from replay) — idempotent if already started
       if (existing.status === 'pending' || existing.status === 'streaming') return;
@@ -76,12 +76,12 @@ export class StreamRegistry {
       retryable: null,
     };
 
-    this._streams.set(msg.streamId as string, state);
+    this._streams.set(msg.streamId, state);
     this._notify(state);
   }
 
   onToken(msg: ServerTokenMessage): void {
-    const current = this._streams.get(msg.streamId as string);
+    const current = this._streams.get(msg.streamId);
     if (current === undefined) return; // token before stream_start (replay edge case)
     if (current.status !== 'streaming') return;
 
@@ -90,12 +90,12 @@ export class StreamRegistry {
       totalTokens: current.totalTokens + 1,
     };
 
-    this._streams.set(msg.streamId as string, updated);
+    this._streams.set(msg.streamId, updated);
     this._notify(updated);
   }
 
   onStreamEnd(msg: ServerStreamEndMessage): StreamState | null {
-    const current = this._streams.get(msg.streamId as string);
+    const current = this._streams.get(msg.streamId);
     if (current === undefined) return null;
     if (current.status !== 'streaming') return current;
 
@@ -106,14 +106,14 @@ export class StreamRegistry {
       totalTokens: msg.totalTokens,
     };
 
-    this._streams.set(msg.streamId as string, completed);
+    this._streams.set(msg.streamId, completed);
     this._notify(completed);
     this._scheduleEviction(msg.streamId);
     return completed;
   }
 
   onStreamError(msg: ServerStreamErrorMessage): StreamState | null {
-    const current = this._streams.get(msg.streamId as string);
+    const current = this._streams.get(msg.streamId);
     if (current === undefined) return null;
     if (current.status !== 'streaming' && current.status !== 'pending') return current;
 
@@ -125,14 +125,14 @@ export class StreamRegistry {
       retryable: msg.retryable,
     };
 
-    this._streams.set(msg.streamId as string, errored);
+    this._streams.set(msg.streamId, errored);
     this._notify(errored);
     this._scheduleEviction(msg.streamId);
     return errored;
   }
 
   abortStream(streamId: StreamId): void {
-    const current = this._streams.get(streamId as string);
+    const current = this._streams.get(streamId);
     if (current === undefined) return;
     if (current.status === 'completed' || current.status === 'error') return;
 
@@ -142,7 +142,7 @@ export class StreamRegistry {
       completedAt: Date.now(),
     };
 
-    this._streams.set(streamId as string, aborted);
+    this._streams.set(streamId, aborted);
     this._notify(aborted);
     this._scheduleEviction(streamId);
   }
@@ -172,14 +172,14 @@ export class StreamRegistry {
   }
 
   private _scheduleEviction(streamId: StreamId): void {
-    const existing = this._evictionTimers.get(streamId as string);
+    const existing = this._evictionTimers.get(streamId);
     if (existing !== undefined) clearTimeout(existing);
 
     const timer = setTimeout(() => {
-      this._streams.delete(streamId as string);
-      this._evictionTimers.delete(streamId as string);
+      this._streams.delete(streamId);
+      this._evictionTimers.delete(streamId);
     }, COMPLETED_STREAM_TTL_MS);
 
-    this._evictionTimers.set(streamId as string, timer);
+    this._evictionTimers.set(streamId, timer);
   }
 }

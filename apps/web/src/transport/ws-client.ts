@@ -206,6 +206,15 @@ export class WsTransportClient implements TransportClient {
       });
     }
 
+    return this._write(message);
+  }
+
+  /**
+   * Write a message to the open socket without the `connected` state gate.
+   * Used directly only for the handshake, which by protocol must be sent
+   * while the machine is in `handshaking` (before `canSend()` is true).
+   */
+  private _write(message: ClientMessage): Result<void, PulseError> {
     const socket = this._socket;
     if (socket === null || socket.readyState !== WebSocket.OPEN) {
       return err({
@@ -291,12 +300,17 @@ export class WsTransportClient implements TransportClient {
 
   private _sendHandshake(): void {
     const lastDeliveredSeq = this._seqTracker.lastDelivered;
-    this.send({
+    // Must bypass send(): canSend() is only true once `connected`, which
+    // requires the handshake_ack this message is asking for.
+    const result = this._write({
       type: 'handshake',
       clientId: this._config.clientId,
       lastSeq: lastDeliveredSeq,
       protocolVersion: PROTOCOL_VERSION,
     });
+    if (!result.ok) {
+      this._emitError(result.error);
+    }
   }
 
   private _startHandshakeTimeout(): void {

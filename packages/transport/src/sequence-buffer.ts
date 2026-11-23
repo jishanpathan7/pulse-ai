@@ -32,7 +32,7 @@ export class SequenceBuffer<T extends Buffered> {
       const oldest = Math.min(...this._pending.keys());
       this._pending.delete(oldest);
     }
-    this._pending.set(item.seq as number, item);
+    this._pending.set(item.seq, item);
   }
 
   /**
